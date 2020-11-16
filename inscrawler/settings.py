@@ -3,8 +3,8 @@ defaults = {
     "fetch_likers": False,
     "fetch_comments": False,
     "fetch_mentions": False,
-    "fetch_hashtags": False,
-    "fetch_details": False
+    "fetch_hashtags": True,
+    "fetch_details": True
 }
 
 

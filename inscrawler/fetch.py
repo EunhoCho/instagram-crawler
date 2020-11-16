@@ -24,13 +24,17 @@ def fetch_mentions(raw_test, dict_obj):
     if mentions:
         dict_obj["mentions"] = mentions
 
+
 def fetch_hashtags(raw_test, dict_obj):
     if not settings.fetch_hashtags:
         return
 
     hashtags = get_parsed_hashtags(raw_test)
     if hashtags:
-        dict_obj["hashtags"] = hashtags
+        if "hashtags" in dict_obj.keys():
+            dict_obj["hashtags"] = list(dict.fromkeys(dict_obj["hashtags"] + hashtags))
+        else:
+            dict_obj["hashtags"] = hashtags
 
 
 def fetch_datetime(browser, dict_post):
@@ -59,6 +63,7 @@ def fetch_imgs(browser, dict_post):
             break
 
     dict_post["img_urls"] = list(img_urls)
+
 
 def fetch_likes_plays(browser, dict_post):
     if not settings.fetch_likes_plays:
@@ -102,7 +107,7 @@ def fetch_likers(browser, dict_post):
             break
 
         last_liker = likers_elems[-1]
-        last_liker.location_once_scrolled_into_view
+        last_liker.location_once_scrolled_into_view()
         sleep(0.6)
         likers_elems = list(browser.find(liker_elems_css_selector))
 
@@ -116,15 +121,18 @@ def fetch_caption(browser, dict_post):
 
     if len(ele_comments) > 0:
 
-        temp_element = browser.find("span",ele_comments[0])
+        temp_element = browser.find("span", ele_comments[0])
 
         for element in temp_element:
 
-            if element.text not in ['Verified',''] and 'caption' not in dict_post:
+            if element.text not in ['Verified', ''] and 'author' not in dict_post:
+                dict_post["author"] = element.text
+
+            elif element.text not in ['Verified', ''] and 'caption' not in dict_post:
                 dict_post["caption"] = element.text
 
-        fetch_mentions(dict_post.get("caption",""), dict_post)
-        fetch_hashtags(dict_post.get("caption",""), dict_post)
+        fetch_mentions(dict_post.get("caption", ""), dict_post)
+        fetch_hashtags(dict_post.get("caption", ""), dict_post)
 
 
 def fetch_comments(browser, dict_post):
@@ -152,10 +160,11 @@ def fetch_comments(browser, dict_post):
 
         temp_element = browser.find("span", els_comment)
 
+        comment = ''
         for element in temp_element:
 
-            if element.text not in ['Verified','']:
-                comment = element.text
+            if element.text not in ['Verified', '']:
+                comment = comment + '\n' + element.text
 
         comment_obj = {"author": author, "comment": comment}
 

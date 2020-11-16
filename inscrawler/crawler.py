@@ -18,10 +18,10 @@ from .exceptions import RetryException
 from .fetch import fetch_caption
 from .fetch import fetch_comments
 from .fetch import fetch_datetime
+from .fetch import fetch_details
 from .fetch import fetch_imgs
 from .fetch import fetch_likers
 from .fetch import fetch_likes_plays
-from .fetch import fetch_details
 from .utils import instagram_int
 from .utils import randmized_sleep
 from .utils import retry
@@ -147,7 +147,7 @@ class InsCrawler(Logging):
     def get_latest_posts_by_tag(self, tag, num):
         url = "%s/explore/tags/%s/" % (InsCrawler.URL, tag)
         self.browser.get(url)
-        return self._get_posts(num)
+        return self._get_posts_full(num)
 
     def auto_like(self, tag="", maximum=1000):
         self.login()
@@ -177,6 +177,7 @@ class InsCrawler(Logging):
     def _get_posts_full(self, num):
         @retry()
         def check_next_post(cur_key):
+            browser.get(cur_key)
             ele_a_datetime = browser.find_one(".eo2As .c-Yi7")
 
             # It takes time to load the post for some users with slow network
@@ -184,13 +185,13 @@ class InsCrawler(Logging):
                 raise RetryException()
 
             next_key = ele_a_datetime.get_attribute("href")
-            if cur_key == next_key:
+            if cur_key != next_key:
                 raise RetryException()
 
         browser = self.browser
         browser.implicitly_wait(1)
         browser.scroll_down()
-        ele_post = browser.find_one(".v1Nh3 a")
+        ele_post = browser.find_one(".v1Nh3 a", waittime=10)
         ele_post.click()
         dict_posts = {}
 
@@ -199,17 +200,15 @@ class InsCrawler(Logging):
         cur_key = None
 
         all_posts = self._get_posts(num)
-        i = 1
+        i = 0
 
         # Fetching all posts
-        for _ in range(num):
+        for item in all_posts:
             dict_post = {}
 
             # Fetching post detail
             try:
-                if(i < num):
-                    check_next_post(all_posts[i]['key'])
-                    i = i + 1
+                check_next_post(item['key'])
 
                 # Fetching datetime and url as key
                 ele_a_datetime = browser.find_one(".eo2As .c-Yi7")
@@ -221,6 +220,7 @@ class InsCrawler(Logging):
                 fetch_likers(browser, dict_post)
                 fetch_caption(browser, dict_post)
                 fetch_comments(browser, dict_post)
+                fetch_details(browser, dict_post)
 
             except RetryException:
                 sys.stderr.write(
@@ -236,9 +236,9 @@ class InsCrawler(Logging):
                 sys.stderr.write(
                     "\x1b[1;31m"
                     + "Failed to fetch the post: "
-                    + cur_key if isinstance(cur_key,str) else 'URL not fetched'
-                    + "\x1b[0m"
-                    + "\n"
+                    + cur_key if isinstance(cur_key, str) else 'URL not fetched'
+                                                               + "\x1b[0m"
+                                                               + "\n"
                 )
                 traceback.print_exc()
 
@@ -251,6 +251,7 @@ class InsCrawler(Logging):
         posts = list(dict_posts.values())
         if posts:
             posts.sort(key=lambda post: post["datetime"], reverse=True)
+        print("Done. Fetched Full %s posts." % (min(len(posts), num)))
         return posts
 
     def _get_posts(self, num):
@@ -272,7 +273,7 @@ class InsCrawler(Logging):
             for ele in ele_posts:
                 key = ele.get_attribute("href")
                 if key not in key_set:
-                    dict_post = { "key": key }
+                    dict_post = {"key": key}
                     ele_img = browser.find_one(".KL4Bh img", ele)
                     dict_post["caption"] = ele_img.get_attribute("alt")
                     dict_post["img_url"] = ele_img.get_attribute("src")
