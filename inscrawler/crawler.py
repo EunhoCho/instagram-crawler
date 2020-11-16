@@ -12,6 +12,7 @@ from time import sleep
 
 from tqdm import tqdm
 
+import crawler
 from . import secret
 from .browser import Browser
 from .exceptions import RetryException
@@ -147,7 +148,7 @@ class InsCrawler(Logging):
     def get_latest_posts_by_tag(self, tag, num):
         url = "%s/explore/tags/%s/" % (InsCrawler.URL, tag)
         self.browser.get(url)
-        return self._get_posts_full(num)
+        return self._get_posts(num)
 
     def auto_like(self, tag="", maximum=1000):
         self.login()
@@ -197,13 +198,38 @@ class InsCrawler(Logging):
 
         pbar = tqdm(total=num)
         pbar.set_description("fetching")
-        cur_key = None
 
         all_posts = self._get_posts(num)
-        i = 0
+        crawler.output(all_posts, './output.json')
 
         # Fetching all posts
-        for item in all_posts:
+        self.fetch_post(all_posts, browser, dict_posts, pbar)
+
+        pbar.close()
+        posts = list(dict_posts.values())
+        if posts:
+            posts.sort(key=lambda post: post["datetime"], reverse=True)
+        print("Done. Fetched Full %s posts." % (min(len(posts), num)))
+        return posts
+
+    def fetch_post(self, all_posts, browser, dict_posts, pbar):
+        def check_next_post(cur_key):
+            browser.get(cur_key)
+            ele_a_datetime = browser.find_one(".eo2As .c-Yi7")
+
+            # It takes time to load the post for some users with slow network
+            if ele_a_datetime is None:
+                raise RetryException()
+
+            next_key = ele_a_datetime.get_attribute("href")
+            if cur_key != next_key:
+                raise RetryException()
+
+        cur_key = None
+        try_list = all_posts[:]
+
+        while len(try_list) > 0:
+            item = try_list[0]
             dict_post = {}
 
             # Fetching post detail
@@ -222,6 +248,12 @@ class InsCrawler(Logging):
                 fetch_comments(browser, dict_post)
                 fetch_details(browser, dict_post)
 
+                self.log(json.dumps(dict_post, ensure_ascii=False))
+                dict_posts[browser.current_url] = dict_post
+
+                pbar.update(1)
+                try_list.remove(item)
+
             except RetryException:
                 sys.stderr.write(
                     "\x1b[1;31m"
@@ -230,7 +262,6 @@ class InsCrawler(Logging):
                     + "\x1b[0m"
                     + "\n"
                 )
-                break
 
             except Exception:
                 sys.stderr.write(
@@ -241,18 +272,6 @@ class InsCrawler(Logging):
                                                                + "\n"
                 )
                 traceback.print_exc()
-
-            self.log(json.dumps(dict_post, ensure_ascii=False))
-            dict_posts[browser.current_url] = dict_post
-
-            pbar.update(1)
-
-        pbar.close()
-        posts = list(dict_posts.values())
-        if posts:
-            posts.sort(key=lambda post: post["datetime"], reverse=True)
-        print("Done. Fetched Full %s posts." % (min(len(posts), num)))
-        return posts
 
     def _get_posts(self, num):
         """

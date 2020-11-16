@@ -267,3 +267,5 @@ dmypy.json
 
 .idea/
 output.json
+hashtags.json
+locations.json
