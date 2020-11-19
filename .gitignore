@@ -266,6 +266,7 @@ dmypy.json
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm
 
 .idea/
-output.json
-hashtags.json
-locations.json
+keys_*.json
+output_*.json
+hashtags_*.json
+locations_*.json
