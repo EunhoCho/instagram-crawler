@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # Crawl keys
     data = get_post_keys_by_hashtag(args.hashtag, args.number or 100, args.debug)
-    output(data, './keys' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(data, './output/keys' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
 
     # Crawl hashtags
     results = []
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     else:
         results = get_hashtags_by_post_key(data, args.debug, 0)
 
-    output(results, './output' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(results, './output/output' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
 
     hashtags = []
     locations = []
@@ -103,5 +103,5 @@ if __name__ == "__main__":
         if 'location' in item.keys():
             locations.append(item)
 
-    output(hashtags, './hashtags' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
-    output(locations, './locations' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(hashtags, './output/hashtags' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(locations, './output/locations' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
