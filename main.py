@@ -55,7 +55,7 @@ def output(data, filepath):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Instagram Crawler", usage=usage())
-    parser.add_argument("hashtag")
+    # parser.add_argument("hashtag")
     parser.add_argument("-n", "--number", type=int, help="number of returned posts")
     parser.add_argument("--multi", action="store_true")
     parser.add_argument("--debug", action="store_true")
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     now = datetime.now()
 
     # Crawl keys
-    data = get_post_keys_by_hashtag(args.hashtag, args.number or 100, args.debug)
+    data = get_post_keys_by_hashtag("제주", args.number or 100, args.debug)
     output(data, './output/keys' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
 
     # Crawl hashtags
