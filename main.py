@@ -1,6 +1,7 @@
 import argparse
 import json
 import multiprocessing
+import os
 from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import Pool
@@ -54,6 +55,7 @@ def output(data, filepath):
 
 
 if __name__ == "__main__":
+    output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
     parser = argparse.ArgumentParser(description="Instagram Crawler", usage=usage())
     # parser.add_argument("hashtag")
     parser.add_argument("-n", "--number", type=int, help="number of returned posts")
@@ -65,7 +67,7 @@ if __name__ == "__main__":
 
     # Crawl keys
     data = get_post_keys_by_hashtag("제주", args.number or 100, args.debug)
-    output(data, './output/keys' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(data, os.path.join(output_folder, 'keys' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json'))
 
     # Crawl hashtags
     results = []
@@ -92,7 +94,7 @@ if __name__ == "__main__":
     else:
         results = get_hashtags_by_post_key(data, args.debug, 0)
 
-    output(results, './output/output' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(results, os.path.join(output_folder, 'output' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json'))
 
     hashtags = []
     locations = []
@@ -103,5 +105,5 @@ if __name__ == "__main__":
         if 'location' in item.keys():
             locations.append(item)
 
-    output(hashtags, './output/hashtags' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
-    output(locations, './output/locations' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json')
+    output(hashtags, os.path.join(output_folder, 'hashtags' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json'))
+    output(locations, os.path.join(output_folder, 'locations' + '_' + now.strftime("%Y%m%d_%H%M%S") + '.json'))
